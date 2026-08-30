@@ -58,15 +58,25 @@ uvicorn src.api:app --reload
 streamlit run src/app_streamlit.py
 ```
 
+A API expõe `GET /health`, `GET /` e `POST /ask` (`pergunta`, `top_k`, `categoria` opcional). Índice vazio devolve HTTP 200 com `modo=sem_fontes`. Falha ao abrir o Chroma ou o modelo de embedding devolve HTTP 503.
+
+O Streamlit consulta essa API: mostra se ela está no ar, filtra por categoria oficial e lista cada fonte como protocolo (`AT-XXX`), documento, página e trecho. Sem fontes, pede para processar e indexar os PDFs.
+
+Há 3 consultas grátis por IP, sem cadastro. Depois é preciso e-mail e senha (e-mail único) e um plano ilustrativo: 7/dia (R$ 49), 15/dia (R$ 99) ou ilimitado (R$ 199). Cartão valida 16 dígitos, validade futura e CVV; PIX mostra um QR estático e o botão “Já paguei”. Não há cobrança real.
+
+A justificativa dos dois modos de consulta e dos planos está em [docs/consultas-e-planos.md](docs/consultas-e-planos.md). O material de apresentação (correções do entregue + diferenciais) está em [pitch/](pitch/).
+
+Antes de buscar, o modelo classifica a pergunta: `ktop` usa só os `top_k` trechos mais semelhantes; `completo` (frequência, totais) conta a base inteira no SQLite pelo campo Problema e na tela lista só o top-k.
+
 Testes:
 
 ```bash
 pytest
 ```
 
-## Modo sem chave da OpenAI
+## Modo sem chave de modelo
 
-Os embeddings são locais. Sem `OPENAI_API_KEY`, o sistema recupera e apresenta os chunks mais semelhantes com suas fontes. Com a chave configurada, LangChain e o modelo definido em `OPENAI_MODEL` produzem uma síntese fundamentada no contexto.
+Os embeddings são locais (`sentence-transformers`, MiniLM multilingual). Sem `OPENAI_API_KEY` e sem `GEMINI_API_KEY`, o sistema recupera e apresenta os chunks mais semelhantes com suas fontes. Com uma das chaves, LangChain gera a síntese (`OPENAI_MODEL` ou `GEMINI_MODEL`). Se as duas estiverem preenchidas, `AI_PROVIDER` escolhe `openai` ou `gemini`. Se o índice estiver vazio ou a busca não devolver trechos, a resposta informa que não há informação suficiente e o modelo não é chamado.
 
 ## Saídas geradas pelo pipeline
 
